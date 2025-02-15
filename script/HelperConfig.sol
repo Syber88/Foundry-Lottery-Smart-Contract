@@ -15,10 +15,8 @@ abstract contract CodeConstants {
     uint256 public constant LOCAL_CHAIN_ID = 31337;
 }
 
-
-contract HelperConfig is Script, CodeConstants{
-
-    struct NetworkConfig{
+contract HelperConfig is Script, CodeConstants {
+    struct NetworkConfig {
         uint256 entranceFee;
         uint256 interval;
         address vrfCoordinator;
@@ -30,22 +28,25 @@ contract HelperConfig is Script, CodeConstants{
     NetworkConfig public localNetworkConfig;
     mapping(uint256 chainId => NetworkConfig) public networkConfigs;
 
-    constructor(){
+    constructor() {
         networkConfigs[ETH_SEPOLIA_CHAIN_ID] = getSepoliaEthConfig();
-
     }
 
     function getConfigByChainId(uint256 chainId) public returns (NetworkConfig memory) {
-        if (networkConfigs[chainId].vrfCoordinator != address(0)){
+        if (networkConfigs[chainId].vrfCoordinator != address(0)) {
             return networkConfigs[chainId];
         } else if (chainId == LOCAL_CHAIN_ID) {
             //ASDASDF
-        }else {
+        } else {
             revert();
         }
     }
 
-    function getSepoliaEthConfig() public pure returns(NetworkConfig memory) {
+    function getConfig() public returns (NetworkConfig memory) {
+        return getConfigByChainId(block.chainid);
+    }
+
+    function getSepoliaEthConfig() public pure returns (NetworkConfig memory) {
         return NetworkConfig({
             entranceFee: 0.01 ether,
             interval: 30, //seconds
@@ -57,14 +58,13 @@ contract HelperConfig is Script, CodeConstants{
     }
 
     function getOrCreateAnvilEthConfig() public returns (NetworkConfig memory) {
-        // check to see if we did set an active network configuration 
+        // check to see if we did set an active network configuration
         if (localNetworkConfig.vrfCoordinator != address(0)) {
             return localNetworkConfig;
         }
         vm.startBroadcast();
-        VRFCoordinatorV2_5Mock vrfCoordinatorMock = new VRFCoordinatorV2_5Mock(
-            MOCK_BASE_FEE, MOCK_GAS_PRICE_LINK, MOCK_WEI_PER_UINT_LINK
-        );
+        VRFCoordinatorV2_5Mock vrfCoordinatorMock =
+            new VRFCoordinatorV2_5Mock(MOCK_BASE_FEE, MOCK_GAS_PRICE_LINK, MOCK_WEI_PER_UINT_LINK);
         vm.stopBroadcast();
 
         localNetworkConfig = NetworkConfig({
@@ -77,6 +77,4 @@ contract HelperConfig is Script, CodeConstants{
         });
         return localNetworkConfig;
     }
-
-
 }

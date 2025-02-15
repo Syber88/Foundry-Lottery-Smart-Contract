@@ -72,6 +72,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
      * @return upkeepNeeded true if it is time to restart the lottery
      * @return - ignored
      */
+
     function checkUpkeep(bytes memory /*checkData*/ )
         public
         view
@@ -79,16 +80,14 @@ contract Raffle is VRFConsumerBaseV2Plus {
     {
         bool timeHasPassed = ((block.timestamp - s_lastTimeStamp) >= i_interval);
         bool isOpen = s_raffleState == RaffleState.OPEN;
-        bool hasBalance = address(this).balance >0;
+        bool hasBalance = address(this).balance > 0;
         bool hasPlayers = s_players.length > 0;
 
         upkeepNeeded = timeHasPassed && isOpen && hasBalance && hasPlayers;
         return (upkeepNeeded, "");
-
-
     }
 
-    function fulfillRandomWords(uint256/* requestId*/, uint256[] calldata randomWords) internal override {
+    function fulfillRandomWords(uint256, /* requestId*/ uint256[] calldata randomWords) internal override {
         uint256 indexOfWinner = randomWords[0] % s_players.length;
         address payable recentWinner = s_players[indexOfWinner];
         s_recentWinner = recentWinner;
@@ -113,7 +112,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
         emit RaffleEntered(msg.sender);
     }
 
-function performUpkeep(bytes calldata /* performData */) external {
+    function performUpkeep(bytes calldata /* performData */ ) external {
         (bool upkeepneeded,) = checkUpkeep("");
         if (!upkeepneeded) {
             revert Raffle__UpkeepNotNeeded(address(this).balance, s_players.length, uint256(s_raffleState));
