@@ -15,6 +15,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
     error Raffle__SendMoreToEnterRaffle();
     error Raffle__Transferfailed();
     error Raffle__RaffleNotOpen();
+    error Raffle__UpkeepNotNeeded(uint256 balance, uint256 playersLength, uint256 raffleState);
 
     /*Type Declarations */
     enum RaffleState {
@@ -71,7 +72,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
      * @return upkeepNeeded true if it is time to restart the lottery
      * @return - ignored
      */
-    function checkUpkeep(bytes calldata /*checkData*/ )
+    function checkUpkeep(bytes memory /*checkData*/ )
         public
         view
         returns (bool upkeepNeeded, bytes memory /* performData */ )
@@ -87,7 +88,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
 
     }
 
-    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override {
+    function fulfillRandomWords(uint256/* requestId*/, uint256[] calldata randomWords) internal override {
         uint256 indexOfWinner = randomWords[0] % s_players.length;
         address payable recentWinner = s_players[indexOfWinner];
         s_recentWinner = recentWinner;
@@ -112,9 +113,10 @@ contract Raffle is VRFConsumerBaseV2Plus {
         emit RaffleEntered(msg.sender);
     }
 
-    function pickWinner() external {
-        if ((block.timestamp - s_lastTimeStamp) < i_interval) {
-            revert();
+function performUpkeep(bytes calldata /* performData */) external {
+        (bool upkeepneeded,) = checkUpkeep("");
+        if (!upkeepneeded) {
+            revert Raffle__UpkeepNotNeeded(address(this).balance, s_players.length, uint256(s_raffleState));
         }
         s_raffleState = RaffleState.CALCULATING;
         VRFV2PlusClient.RandomWordsRequest memory request = VRFV2PlusClient.RandomWordsRequest({
@@ -128,7 +130,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
                 VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
             )
         });
-        uint256 requestId = s_vrfCoordinator.requestRandomWords(request);
+        s_vrfCoordinator.requestRandomWords(request);
     }
 
     function getEntranceFee() external view returns (uint256) {
