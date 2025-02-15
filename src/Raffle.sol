@@ -23,6 +23,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
     uint32 private immutable i_callbackGasLimit;
     address payable[] private s_players;
     uint256 private s_lastTimeStamp;
+    address private s_recentWinner; 
 
     /**
      * events
@@ -45,7 +46,12 @@ contract Raffle is VRFConsumerBaseV2Plus {
         s_lastTimeStamp = block.timestamp;
     }
 
-    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override {}
+    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override {
+        uint256 indexOfWinner = randomWords[0] % s_players.length;
+        address payable recentWinner = s_players[indexOfWinner];
+        s_recentWinner = recentWinner;
+        (bool success, ) = recentWinner.call{value: address(this).balance}("");
+    }
 
     function enterRaffle() external payable {
         if (msg.value < i_entranceFee) {
