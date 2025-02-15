@@ -18,11 +18,11 @@ contract Raffle is VRFConsumerBaseV2Plus {
 
     /*Type Declarations */
     enum RaffleState {
-        OPEN, 
+        OPEN,
         CALCULATING
-        //  can explicitly converted to integers so open can
-        //be 1 and calculating can be 2
     }
+    //  can explicitly converted to integers so open can
+    //be 1 and calculating can be 2
 
     /* State variables */
     uint16 private constant REQUEST_CONFIRMATION = 3;
@@ -36,8 +36,6 @@ contract Raffle is VRFConsumerBaseV2Plus {
     uint256 private s_lastTimeStamp;
     address private s_recentWinner;
     RaffleState private s_raffleState;
-
-
 
     /**
      * events
@@ -61,9 +59,31 @@ contract Raffle is VRFConsumerBaseV2Plus {
         s_lastTimeStamp = block.timestamp;
         s_raffleState = RaffleState.OPEN;
     }
+    /**
+     * @dev Function the chainlink node will call to see if the function is ready to have a
+     * winner picked.
+     * The following should be true
+     * 1. The time interval has passed between raffle runs
+     * 2. The lottery is open
+     * 3. The contract has ETH
+     * 4. Implicitly, your subscription has LINK
+     * @param - ignored
+     * @return upkeepNeeded true if it is time to restart the lottery
+     * @return - ignored
+     */
+    function checkUpkeep(bytes calldata /*checkData*/ )
+        public
+        view
+        returns (bool upkeepNeeded, bytes memory /* performData */ )
+    {
+        bool timeHasPassed = ((block.timestamp - s_lastTimeStamp) >= i_interval);
+        bool isOpen = s_raffleState == RaffleState.OPEN;
+        bool hasBalance = address(this).balance >0;
+        bool hasPlayers = s_players.length > 0;
 
-    function checkUpkeep(bytes calldata /*checkData*/) public view 
-    returns (bool upkeepNeeded, bytes memory /* performData */){
+        upkeepNeeded = timeHasPassed && isOpen && hasBalance && hasPlayers;
+        return (upkeepNeeded, "");
+
 
     }
 
@@ -85,7 +105,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
         if (msg.value < i_entranceFee) {
             revert Raffle__SendMoreToEnterRaffle();
         }
-        if (s_raffleState != RaffleState.OPEN){
+        if (s_raffleState != RaffleState.OPEN) {
             revert Raffle__RaffleNotOpen();
         }
         s_players.push(payable(msg.sender));
