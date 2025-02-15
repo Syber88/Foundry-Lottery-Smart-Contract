@@ -19,7 +19,7 @@ contract HelperConfig is Script{
         uint256 subscriptionId;
     }
 
-    NetworkConfig public localNetworkconfig;
+    NetworkConfig public localNetworkConfig;
     mapping(uint256 chainId => NetworkConfig) public networkConfigs;
 
     constructor(){
@@ -48,6 +48,12 @@ contract HelperConfig is Script{
         });
     }
 
+    fuction getOrCreateAnvilEthConfig() public returns (NetworkConfig memory) {
+        // check to see if we did set an active network configuration 
+        if (localNetworkconfig.vrfCoordinator != address(0)) {
+            return localNetworkConfig;
+        }
+    }
 
 
 }
