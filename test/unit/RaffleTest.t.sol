@@ -8,6 +8,10 @@ import {Raffle} from "../../src/Raffle.sol";
 import {HelperConfig} from "../../script/HelperConfig.sol";
 
 contract RaffleTest is Test {
+
+    event RaffleEntered(address indexed player);
+    event WinnerPicked(address indexed winner);
+
     Raffle public raffle;
     HelperConfig public helperConfig;
 
@@ -50,5 +54,14 @@ contract RaffleTest is Test {
         raffle.enterRaffle{value: entranceFee}();
         address playerRecorded = raffle.getPlayer(0);
         assert(playerRecorded == PLAYER);
+    }
+
+    function testEnteringRaffleEmitsEvent() public {
+        vm.prank(PLAYER);
+        vm.expectEmit(true, false, false, false, address(raffle));
+        emit RaffleEntered(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+
+
     }
 }
