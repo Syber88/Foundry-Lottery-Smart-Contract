@@ -20,14 +20,27 @@ contract CreateSubscription is Script{
         vm.stopBroadcast();
         console2.log("Your Subscription Id is: ", subId);
         return (subId, vrfCoordinator);
-
-
-
-
     }
 
     function run() public {
+        createSubscriptionUsingConfig();
+    }
+}
+
+
+contract FundSubscription is Script {
+    uint256 public constant FUND_AMOUNT = 3 ether; // same as LINK
+
+
+    function fundSubscriptionUsingConfig() public {
+        HelperConfig helperConfig = new HelperConfig();
+        address vrfCoodinator = helperConfig.getConfig().vrfCoordinator;
+        uint256 subId = helperConfig.getConfig().subscriptionId;
+        
 
     }
+    
+    function run() public {
 
+    }
 }
