@@ -7,7 +7,7 @@ import {DeployRaffle} from "../../script/DeployRaffle.s.sol";
 import {Raffle} from "../../src/Raffle.sol";
 import {HelperConfig} from "../../script/HelperConfig.sol";
 import {Vm} from "forge-std/Vm.sol";
-
+import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 
 contract RaffleTest is Test {
     event RaffleEntered(address indexed player);
@@ -38,6 +38,14 @@ contract RaffleTest is Test {
         subscriptionId = config.subscriptionId;
 
         vm.deal(PLAYER, STARTING_PLAYER_BALANCE);
+    }
+
+    modifier raffleEntered() {
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+        _;
     }
 
     function testRaffleInitialisesInOpenState() public view {
@@ -73,8 +81,8 @@ contract RaffleTest is Test {
 
     function testCheckUpkeepReturnsFalseIfItHasNoBalance() public {
         vm.warp(block.timestamp + interval + 1);
-        vm.roll(block.number + 1 );
-        (bool upkeepNeeded, ) = raffle.checkUpkeep("");
+        vm.roll(block.number + 1);
+        (bool upkeepNeeded,) = raffle.checkUpkeep("");
 
         assert(!upkeepNeeded);
     }
@@ -87,7 +95,6 @@ contract RaffleTest is Test {
 
     function testPerformUpkeepOnlyRunsIfCheckUpkeepIsTrue() public raffleEntered {
         raffle.performUpkeep("");
-
     }
 
     function testPerformUpkeepRevertsIfCheckUpkeepIsFalse() public {
@@ -104,15 +111,6 @@ contract RaffleTest is Test {
             abi.encodeWithSelector(Raffle.Raffle__UpkeepNotNeeded.selector, currentBalance, numPlayers, raffleState)
         );
         raffle.performUpkeep("");
-
-    }
-
-    modifier raffleEntered() {
-        vm.prank(PLAYER);
-        raffle.enterRaffle{value: entranceFee}();
-        vm.warp(block.timestamp + interval + 1);
-        vm.roll(block.number + 1);
-        _;
     }
 
     function testPerformUpkeepUpdatesRaffleStateAndEmitsRequestId() public raffleEntered {
@@ -122,10 +120,14 @@ contract RaffleTest is Test {
         bytes32 requestId = entries[1].topics[1];
 
         Raffle.RaffleState raffleState = raffle.getRaffleSTate();
-        assert(uint256(requestId)> 0);
-        assert(uint256(raffleState) ==1);
-
+        assert(uint256(requestId) > 0);
+        assert(uint256(raffleState) == 1);
     }
 
-    
+    function testFulfillRandomWordsCanOnlyBeCalledAfterPerformUpkeep(uint256 randomRequestId) public raffleEntered{
+        vm.expectRevert(VRFCoordinatorV2_5Mock.InvalidRequest.selector);
+        VRFCoordinatorV2_5Mock(vrfCoordinator).fulfillRandomWords(randomRequestId, address(raffle));
+
+
+    }
 }
