@@ -8,7 +8,6 @@ import {Raffle} from "../../src/Raffle.sol";
 import {HelperConfig} from "../../script/HelperConfig.sol";
 
 contract RaffleTest is Test {
-
     event RaffleEntered(address indexed player);
     event WinnerPicked(address indexed winner);
 
@@ -66,12 +65,10 @@ contract RaffleTest is Test {
     function testDontAllowPlayersEntryToRaffleWhileCalculating() public {
         vm.prank(PLAYER);
         raffle.enterRaffle{value: entranceFee}();
-        vm.warp(block.timestamp + interval +3);
+        vm.warp(block.timestamp + interval + 3);
         vm.roll(block.number + 2);
         raffle.performUpkeep("");
         vm.expectRevert(Raffle.Raffle__RaffleNotOpen.selector);
         raffle.enterRaffle{value: entranceFee}();
-
-
     }
 }
