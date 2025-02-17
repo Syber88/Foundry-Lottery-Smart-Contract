@@ -80,4 +80,14 @@ contract RaffleTest is Test {
 
         assert(!upkeepNeeded);
     }
+
+    function testCheckUpkepReturnsFalseIfRaffleIsNotOpen() public {
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+        vm.warp(block.timestamp + interval + 3);
+        vm.roll(block.number + 2);
+        raffle.performUpkeep("");
+        (bool upkeepNeeded,) = raffle.checkUpkeep("");
+        assert(!upkeepNeeded);
+    }
 }
