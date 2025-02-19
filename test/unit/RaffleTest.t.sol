@@ -10,7 +10,7 @@ import {Vm} from "forge-std/Vm.sol";
 import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 import {CodeConstants} from "script/HelperConfig.sol";
 
-contract RaffleTest is Test, CodeConstants{
+contract RaffleTest is Test, CodeConstants {
     event RaffleEntered(address indexed player);
     event WinnerPicked(address indexed winner);
 
@@ -124,26 +124,32 @@ contract RaffleTest is Test, CodeConstants{
         assert(uint256(requestId) > 0);
         assert(uint256(raffleState) == 1);
     }
+
     modifier skipFork() {
-        if(block.chainid != LOCAL_CHAIN_ID){
+        if (block.chainid != LOCAL_CHAIN_ID) {
             return;
         }
         _;
     }
-    function testFulfillRandomWordsCanOnlyBeCalledAfterPerformUpkeep(uint256 randomRequestId) public raffleEntered skipFork {
+
+    function testFulfillRandomWordsCanOnlyBeCalledAfterPerformUpkeep(uint256 randomRequestId)
+        public
+        raffleEntered
+        skipFork
+    {
         vm.expectRevert(VRFCoordinatorV2_5Mock.InvalidRequest.selector);
         VRFCoordinatorV2_5Mock(vrfCoordinator).fulfillRandomWords(randomRequestId, address(raffle));
     }
 
-    function testFulfillRandomWordsPicksWinnerResetsAndSendsMOney() public raffleEntered skipFork{
+    function testFulfillRandomWordsPicksWinnerResetsAndSendsMOney() public raffleEntered skipFork {
         uint256 additionalEntrance = 3;
         uint256 startingIndex = 1;
         address expectedWinner = address(1);
 
         for (uint256 i = startingIndex; i < additionalEntrance + startingIndex; i++) {
             address newPlayer = address(uint160(i));
-            hoax(newPlayer, 1 ether);     
-            raffle.enterRaffle{value: entranceFee}();   
+            hoax(newPlayer, 1 ether);
+            raffle.enterRaffle{value: entranceFee}();
         }
         uint256 startingTimeStamp = raffle.getLastTimeStamp();
         uint256 winnerStartingBalance = expectedWinner.balance;
@@ -164,7 +170,5 @@ contract RaffleTest is Test, CodeConstants{
         assert(uint256(raffleState) == 0);
         assert(winnerBalance == (winnerStartingBalance + prize));
         assert(endingTimeStamp > startingTimeStamp);
-
-
     }
 }
